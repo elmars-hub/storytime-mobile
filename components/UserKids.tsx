@@ -21,7 +21,7 @@ const UserKids = () => {
         data?.map((kid) => (
           <Pressable
             onPress={async () => {
-              // await AsyncStorage.setItem("currentKid", kid.id);
+              // await AsyncStorage.getItem("currentKid", kid.id);
               navigation.navigate("kid", {
                 screen: "setup",
                 params: {

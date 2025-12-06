@@ -1,34 +1,58 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import apiFetch from "../../../apiFetch";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BASE_URL } from "../../../constants";
-import type { Story } from "./useGetStories";
+import apiFetch from "../../../apiFetch";
+import { Alert } from "react-native";
 
-type StoryRequest = {
-    statusCode: number;
-    success: boolean;
-    data: Story[];
-    message: string;
+const useGetRecommendStory = ({ onSuccess }: { onSuccess?: () => void } = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      kidId,
+      storyId,
+      message,
+    }: {
+      kidId: string;
+      storyId: string;
+      message?: string;
+    }) => {
+      const url = `${BASE_URL}/stories/recommend`;
+
+      const request = await apiFetch(url, {
+        method: "POST",
+        body: JSON.stringify({
+          kidId,
+          storyId,
+          message,
+        }),
+      });
+
+      const response = await request.json();
+
+      if (!response?.success) {
+        Alert.alert(response?.message ?? "Unexpected error, try again");
+        return;
+      }
+
+      return response;
+    },
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["kidById", variables.kidId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["storyById", variables.storyId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["stories"],
+      });
+
+      onSuccess?.();
+    },
+  });
 };
 
-const useGetRecommendedStories = (limit = 50) => {
-    return useSuspenseQuery({
-        queryKey: ["getStories", "recommended", String(limit)],
-        queryFn: async () => {
-            const url = `${BASE_URL}/stories?recommended=true&limit=${encodeURIComponent(
-                String(limit)
-            )}`;
-            const req = await apiFetch(url, { method: "GET" });
-            const res: StoryRequest = await req.json();
-            if (!res.success) throw new Error(res.message ?? "Failed to load stories");
-            console.log("Recommended stories", res.data);
-
-            return res;
-        },
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-        select: (r) => r.data,
-    });
-};
-
-export default useGetRecommendedStories;
-export type { StoryRequest };
+export default useGetRecommendStory;

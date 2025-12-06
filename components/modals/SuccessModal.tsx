@@ -1,32 +1,50 @@
 import React from "react";
-import { Modal, View, Text, Pressable, Image } from "react-native";
+import { Modal, View, Text, Pressable, Image, Dimensions } from "react-native";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
 };
 
+const { width: screenWidth } = Dimensions.get("window");
+
 export default function SuccessModal({ visible, onClose }: Props) {
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View className="flex-1 bg-black/40 justify-center items-center px-6">
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }}>
         <View
-          className="bg-white w-full p-8 items-center"
-          style={{ borderRadius: 36 }}
+          style={{
+            width: screenWidth,
+            backgroundColor: "white",
+            padding: 24,
+            alignItems: "center",
+            borderTopLeftRadius: 36,
+            borderTopRightRadius: 36,
+          }}
         >
           <Image
             source={require("../../assets/icons/successful-reset-illustration.png")}
             style={{ alignSelf: "center" }}
           />
-          <Text className="text-2xl font-[quilka] text-center my-6">
+          <Text style={{ fontSize: 24, fontFamily: "quilka", textAlign: "center", marginVertical: 16 }}>
             Story Recommended Successfully!
           </Text>
 
           <Pressable
             onPress={onClose}
-            className="bg-transparent border border-black/20 w-full py-4 rounded-full mt-4"
+            style={{
+              backgroundColor: "transparent",
+              borderColor: "rgba(0,0,0,0.2)",
+              borderWidth: 1,
+              width: "100%",
+              paddingVertical: 16,
+              borderRadius: 50,
+              marginTop: 16,
+            }}
           >
-            <Text className="text-center text-black font-[abeezee]">Close</Text>
+            <Text style={{ textAlign: "center", color: "black", fontFamily: "abeezee" }}>
+              Close
+            </Text>
           </Pressable>
         </View>
       </View>

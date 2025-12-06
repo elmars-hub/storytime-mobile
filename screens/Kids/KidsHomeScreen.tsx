@@ -1,10 +1,18 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { lazy, Suspense } from "react";
-import { ActivityIndicator, Image, Text, View, Pressable } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Text,
+  View,
+  Pressable,
+  ScrollView,
+} from "react-native";
 import ErrorComponent from "../../components/ErrorComponent";
 import LoadingOverlay from "../../components/LoadingOverlay";
 import useGetKidById from "../../hooks/tanstack/queryHooks/useGetKidById";
 import useGetStoryBuddyById from "../../hooks/tanstack/queryHooks/useGetStoryBuddyById";
+import useGetRecommendedStory from "../../hooks/tanstack/queryHooks/useGetRecommendedStory";
 import {
   KidsTabNavigatorParamList,
   KidsTabNavigatorProp,
@@ -27,27 +35,42 @@ const KidHomeScreen = () => {
     error: buddyError,
     refetch: refetchBuddy,
   } = useGetStoryBuddyById(data?.storyBuddyId!);
+  const {
+    data: recommendedData,
+    isLoading: recommendedLoading,
+    error: recommendedError,
+  } = useGetRecommendedStory(params.childId);
+
   const navigation = useNavigation<any>();
 
-  if (error)
-    return <ErrorComponent message={error.message} refetch={refetch} />;
-  if (!data)
+  // Show loading overlay while fetching kid
+  if (isPending || !data) {
     return (
-      <ErrorComponent
-        message="Kid not found"
-        refetch={() => navigation.goBack()}
-      />
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" />
+      </View>
     );
-  if (buddyError)
+  }
+
+  // Show error if fetch failed
+  if (error) {
+    return <ErrorComponent message={error.message} refetch={refetch} />;
+  }
+
+  // Buddy fetch error (optional)
+  if (buddyError) {
     return (
       <ErrorComponent
         message={buddyError.message ?? "Buddy not found"}
         refetch={refetchBuddy}
       />
     );
+  }
+
   return (
     <View style={{ padding: 20 }} className="flex-1">
-      <View className="flex flex-row pb-4  items-center gap-x-3">
+      {/* Kid header */}
+      <View className="flex flex-row pb-4 items-center gap-x-3">
         <KidAvatar
           uri={data.avatar?.url}
           size={50}
@@ -55,30 +78,40 @@ const KidHomeScreen = () => {
             parentNav.reset({ index: 0, routes: [{ name: "selection" }] })
           }
         />
-       
         <Text className="text-xl font-[abeezee] flex-1">
           Hello, {data.name}
         </Text>
-
-  <Image
-    source={
-      buddyData?.name === "lumina"
-        ? require("../../assets/avatars/lumina.png")
-        : require("../../assets/avatars/zylo.png")
-    }
-    className="size-[50px]"
-  />
-
-
-
+        <Image
+          source={
+            buddyData?.name === "lumina"
+              ? require("../../assets/avatars/lumina.png")
+              : require("../../assets/avatars/zylo.png")
+          }
+          className="size-[50px]"
+        />
       </View>
+
+      {/* Recommended stories loading */}
+      {recommendedLoading && <ActivityIndicator size="large" />}
+      {recommendedError && (
+        <Text style={{ color: "red", marginBottom: 10 }}>
+          Could not load recommended story
+        </Text>
+      )}
+
+      {/* Stories list */}
       <Suspense fallback={<ActivityIndicator size={"large"} />}>
-        <KidsHomeScreenStories id={params.childId} />
+        <KidsHomeScreenStories
+          id={params.childId}
+          recommendedStories={recommendedData?.data ?? []}
+        />
       </Suspense>
 
+      {/* Optional loading overlay for other states */}
       <LoadingOverlay visible={isPending} />
     </View>
   );
 };
+
 
 export default KidHomeScreen;

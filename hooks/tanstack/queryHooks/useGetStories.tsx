@@ -1,37 +1,64 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import apiFetch from "../../../apiFetch";
 import { BASE_URL } from "../../../constants";
-import useAuth from "../../../contexts/AuthContext";
 
-const useGetStories = () => {
-  const { user } = useAuth();
+type StoryRequest = {
+  statusCode: number;
+  success: boolean;
+  data: { data: Story[] };
+  message: string;
+};
 
-  return useQuery({
-    queryKey: ["stories", user?.id],
+type Story = {
+  id: string;
+  title: string;
+  description: string;
+  language: string;
+  coverImageUrl: string;
+  audioUrl: string;
+  textContent: string;
+  isInteractive: boolean;
+  ageMin: number;
+  ageMax: number;
+  recommended: false;
+  aiGenerated: false;
+  difficultyLevel: number;
+  wordCount: number;
+  createdAt: string;
+  updatedAt: string;
+  images: string[];
+  categories: string[];
+  questions: {
+    id: string;
+    storyId: string;
+    question: string;
+    options: string[];
+    correctOption: number;
+  };
+  progress: number;
+};
+
+const useGetStories = (id?: string) => {
+  return useSuspenseQuery({
+    queryKey: ["getStories", id],
     queryFn: async () => {
-      try {
-        if (!user) return null;
-        const url = `${BASE_URL}/stories`;
-        const response = await apiFetch(url, {
-          method: "GET",
-        });
-
-        if (!response.ok) {
-          const errJson = await response.json().catch(() => null);
-          const msg = errJson?.message || `Failed with status ${response.status}`;
-          throw new Error(msg);
-        }
-
-        const stories = await response.json();
-        console.log("stories:", stories);
-        return stories as any[]; // replace `any` with your Story type if available
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "unexpected error, try again";
-        throw new Error(message);
+      const url = `${BASE_URL}/stories?kidId=${id}`;
+      const request = await apiFetch(url, {
+        method: "GET",
+      });
+      const response: StoryRequest = await request.json();
+      if (!response.success) {
+        throw new Error(response.message ?? "Unexpected error,try again later");
       }
+      // console.log("Get Stories response:", response);
+      return response;
     },
-    enabled: !!user,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    select: (res) => res.data.data,
   });
 };
+
+export type { Story, StoryRequest };
 
 export default useGetStories;

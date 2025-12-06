@@ -1,6 +1,8 @@
 import React, { lazy, Suspense, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
 import { useNavigation, RouteProp, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import LoadingOverlay from "../../components/LoadingOverlay";
 import ErrorComponent from "../../components/ErrorComponent";
 import Icon from "../../components/Icon";
@@ -20,10 +22,23 @@ const BuddySelectionScreen = () => {
 
   const { isPending, data, error, refetch } = useGetKidById(childId);
 
+  // Function to save buddy to AsyncStorage
+  const saveBuddyToStorage = async (buddyId: string) => {
+    try {
+      await AsyncStorage.setItem(`buddy_${childId}`, buddyId);
+    } catch (err) {
+      console.log("Error saving buddy to AsyncStorage:", err);
+    }
+  };
+
   const { mutate, isPending: isUpdating } = useSetStoryBuddy({
     kidId: childId,
     id: selected,
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Save to AsyncStorage when backend is successful
+      await saveBuddyToStorage(selected);
+
+      // Navigate to welcome screen
       navigator.navigate("welcomeScreen", { childId, selected });
     },
   });

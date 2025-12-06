@@ -5,10 +5,17 @@ import useGetStories, {
 } from "../hooks/tanstack/queryHooks/useGetStories";
 import { KidsTabNavigatorProp } from "../Navigation/KidsTabNavigator";
 import ErrorComponent from "./ErrorComponent";
+import ImageWithFallback from "./parents/ImageWithFallback";
 
-const KidsHomeScreenStories = ({ id }: { id: string }) => {
+interface KidsHomeScreenStoriesProps {
+  id: string;
+  recommendedStories?: any[]; // optional
+}
+
+const KidsHomeScreenStories = ({ id, recommendedStories = [] }: KidsHomeScreenStoriesProps) => {
   const navigation = useNavigation<KidsTabNavigatorProp>();
   const { isPending, error, refetch, data } = useGetStories(id);
+  const FALLBACK = require("../assets/parents/unseen-world.jpg");
 
   const stories: Story[] = (() => {
     const r: any = data;
@@ -18,6 +25,14 @@ const KidsHomeScreenStories = ({ id }: { id: string }) => {
     console.warn("useGetStories: unexpected shape ->", r);
     return [];
   })();
+  
+const mergedStories = [
+  ...recommendedStories.map((rec) => rec.story),
+  ...stories.filter(
+    (s) => !recommendedStories.some((rec) => rec.story.id === s.id)
+  ), 
+];
+
 
   console.log("Normalized stories length:", stories.length);
 
@@ -30,7 +45,7 @@ const KidsHomeScreenStories = ({ id }: { id: string }) => {
     );
   return (
     <FlatList
-      data={stories}
+      data={mergedStories}
       className="flex-1 gap-4"
       contentContainerClassName=""
       showsVerticalScrollIndicator={false}
@@ -57,8 +72,9 @@ const KidsHomeScreenStories = ({ id }: { id: string }) => {
             </View>
           </View>
 
-          <Image
-            source={{ uri: item.coverImageUrl }}
+          <ImageWithFallback
+            sourceUri={item.coverImageUrl}
+            fallbackRequire={FALLBACK}
             style={{ position: "absolute", right: 0 }}
             className="h-[162px] w-[150px]"
           />

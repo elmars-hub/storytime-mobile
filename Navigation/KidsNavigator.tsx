@@ -10,9 +10,7 @@ import KidsTabNavigator from "./KidsTabNavigator";
 
 type KidsNavigatorParamList = {
   setup: NavigatorScreenParams<KidsSetupNavigatorParamList>;
-  index: {
-    childId?: string;
-  };
+  index: { childId?: string; selected?: string };
 };
 type KidsNavigatorProp = NativeStackNavigationProp<KidsNavigatorParamList>;
 
